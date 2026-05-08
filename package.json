@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check . && tsc -b --pretty false",
     "fmt": "prettier --write .",
-    "smoke": "bash scripts/smoke.sh"
+    "smoke": "bash scripts/smoke.sh",
+    "screenshot": "node scripts/capture-screenshot.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.16",

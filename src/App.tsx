@@ -39,9 +39,9 @@ export function App() {
   const buildInfoQuery = useQuery({
     queryKey: ["build-info"],
     queryFn: fetchBuildInfo,
-    initialData: fallbackBuildInfo
+    placeholderData: fallbackBuildInfo
   });
-  const buildInfo = buildInfoQuery.data;
+  const buildInfo = buildInfoQuery.data ?? fallbackBuildInfo;
 
   useEffect(() => {
     loadSettings()
