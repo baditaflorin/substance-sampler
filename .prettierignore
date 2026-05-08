@@ -1,0 +1,10 @@
+node_modules/
+coverage/
+tmp/
+docs/assets/
+docs/index.html
+docs/404.html
+docs/sw.js
+docs/manifest.webmanifest
+docs/build-info.json
+package-lock.json

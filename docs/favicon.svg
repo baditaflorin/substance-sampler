@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Substance Sampler">
+  <rect width="64" height="64" rx="12" fill="#101820"/>
+  <path d="M14 38 32 8l18 30-18 18-18-18Z" fill="#38bdf8"/>
+  <path d="M20 39h24L32 51 20 39Z" fill="#f59e0b"/>
+  <circle cx="32" cy="31" r="8" fill="#f8fafc"/>
+</svg>
