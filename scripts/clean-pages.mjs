@@ -10,7 +10,7 @@ const generated = [
   "favicon.svg",
   "manifest.webmanifest",
   "sw.js",
-  "build-info.json"
+  ...(process.env.BUILD_INFO_PRESERVE === "1" ? [] : ["build-info.json"])
 ];
 
 for (const entry of generated) {
