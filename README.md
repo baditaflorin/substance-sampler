@@ -19,7 +19,15 @@ https://www.paypal.com/paypalme/florinbadita
 
 ## What It Does
 
-Substance Sampler imports a photo and generates albedo, normal, roughness, height, and ambient occlusion texture maps fully in the browser. The page includes material/source analysis, per-map confidence, real-data warnings, a live material preview, ZIP export with provenance metadata, local settings persistence, a GitHub star link, a PayPal support link, and visible version/commit metadata.
+Substance Sampler imports photos by picker, drag-drop, paste, CORS-readable URL, generated sample, or project-state import, then generates albedo, normal, roughness, height, and ambient occlusion texture maps fully in the browser. The page includes material/source analysis, per-map confidence, real-data warnings, live material preview, ZIP export with provenance metadata, metadata copy/download, project state export/import, settings links, local project restore, a GitHub star link, a PayPal support link, and visible version/commit metadata.
+
+## Verified Features
+
+- Photo inputs: picker, drag-drop, paste, CORS-readable URL, generated sample, multi-file queue, project import.
+- Outputs: individual PNG maps, ZIP map bundle, metadata JSON, clipboard metadata, reloadable project JSON, settings-only share URL.
+- Persistence: settings save immediately, last project restores from IndexedDB, Start Fresh clears local state.
+- Validation: source bytes are sniffed before decode, project files are zod-validated, and URL/CORS failures are actionable.
+- Tests: `make smoke` covers the happy path, real-data fixtures, and Phase 3 completeness flows.
 
 ## Quickstart
 
@@ -78,12 +86,22 @@ https://github.com/baditaflorin/substance-sampler/blob/main/docs/deploy.md
 Phase 2 substance audit and postmortem:
 https://github.com/baditaflorin/substance-sampler/blob/main/docs/postmortem-phase2-substance.md
 
+Phase 3 completeness audit:
+https://github.com/baditaflorin/substance-sampler/tree/main/docs/phase3
+
 Privacy:
 https://github.com/baditaflorin/substance-sampler/blob/main/docs/privacy.md
 
 ## Browser Support
 
 The app works with CPU fallbacks in modern Chromium, Firefox, and Safari-class browsers. WebGPU acceleration is used when `navigator.gpu` is available. Three.js preview requires WebGL.
+
+## Limitations
+
+- Image URL import only works for direct image URLs that allow browser CORS reads. Download and upload the file when a site blocks access.
+- Settings links do not include source images; use project JSON export/import for full session transfer.
+- Folder import, print/PDF reports, embed code, and runtime APIs are out of scope for the static GitHub Pages app.
+- Real-ESRGAN, libigl, and scikit-image payloads are not bundled in this static release.
 
 ## Security
 

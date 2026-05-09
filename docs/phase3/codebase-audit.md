@@ -51,3 +51,21 @@ Scope: `src/`, `e2e/`, `scripts/`, and documentation claims. Generated `docs/ass
 4. No test for project state export/import round trip.
 5. No test for settings persistence before regenerate.
 6. No test for copied metadata or share link.
+
+## Measurements After
+
+| Metric              |                     After | Evidence                                                                                                                          |
+| ------------------- | ------------------------: | --------------------------------------------------------------------------------------------------------------------------------- | ----- | --- | ---------------------------------- |
+| DRY violations      | 0 in core/release scripts | Preview runner logic now lives in `scripts/preview-runner.sh`.                                                                    |
+| God modules         |         0 in core modules | Source loading, project state, storage validation, and sampler presentation moved out of `App.tsx`.                               |
+| TODO/FIXME/XXX/HACK |                         0 | `rg "TODO                                                                                                                         | FIXME | XXX | HACK"` excluding generated assets. |
+| `any` uses          |               0 in source | `rg "\\bany\\b"` excluding generated assets.                                                                                      |
+| `@ts-ignore`        |                         0 | None found.                                                                                                                       |
+| Boundary casts      |                2 accepted | JSON parse results are immediately zod-validated in `src/lib/project/state.ts`.                                                   |
+| Dead code           |                   0 known | Removed unused file input ref; lint clean.                                                                                        |
+| Test coverage holes |       0 for Phase 3 paths | `e2e/completeness.spec.ts` covers paste, URL, multi-file, state round-trip, settings persistence, metadata copy, and share links. |
+
+Remaining accepted debt:
+
+- `App.tsx` is still the high-level workflow orchestrator. It is no longer a source-decoding or presentational component module.
+- Test PNG helpers remain under `e2e/` because they are test-only and not product code.

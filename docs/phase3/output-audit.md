@@ -27,3 +27,25 @@ Before counts:
 Success target:
 
 - Green all app-relevant export rows; keep print/embed/API explicitly out of scope.
+
+## After Implementation
+
+| Output pathway               | Status after             | Evidence                                                        |
+| ---------------------------- | ------------------------ | --------------------------------------------------------------- |
+| Download individual PNG maps | Works fully              | Smoke test reads generated map canvas; existing buttons remain. |
+| Download ZIP                 | Works fully              | Smoke test enables ZIP after processing.                        |
+| JSON metadata export         | Works fully              | Direct metadata download button plus ZIP metadata.              |
+| Copy-to-clipboard            | Works fully              | `e2e/completeness.spec.ts` verifies metadata copy confirmation. |
+| Downloadable project state   | Works fully              | Project JSON download e2e path passes.                          |
+| Import exported state        | Works fully              | Exported project is imported and reprocessed in e2e.            |
+| Shareable URL                | Works fully for settings | Settings link e2e path passes; image data excluded by design.   |
+| Print/PDF                    | Out of scope             | ADR 0062.                                                       |
+| Embed code                   | Out of scope             | ADR 0062.                                                       |
+| API/curl output              | Out of scope             | ADR 0062; Mode A has no runtime API.                            |
+
+After counts:
+
+- Green: 7
+- Yellow: 0
+- Red: 0
+- Out of scope: 3

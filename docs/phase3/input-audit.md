@@ -29,3 +29,27 @@ Before counts:
 Success target:
 
 - Green all rows except folder input, which remains explicitly out of scope.
+
+## After Implementation
+
+| Input pathway                 | Status after                      | Evidence                                                                  |
+| ----------------------------- | --------------------------------- | ------------------------------------------------------------------------- |
+| Browse file picker            | Works fully                       | `e2e/smoke.spec.ts`, `e2e/realdata.spec.ts`.                              |
+| Drag and drop                 | Works fully                       | Shared `loadFiles` queue handles all dropped files.                       |
+| Paste image from clipboard    | Works fully                       | `e2e/completeness.spec.ts` dispatches image paste and verifies maps.      |
+| Clipboard permission fallback | Works fully                       | Paste button uses Clipboard API and gives actionable permission errors.   |
+| URL input                     | Works fully                       | CORS-readable URL test passes; blocked/invalid URLs show domain errors.   |
+| Multi-file input              | Works fully                       | Partial success/error queue covered in e2e.                               |
+| Folder input                  | Out of scope                      | ADR 0061 keeps directory import out of v0.3.0.                            |
+| Mobile picker                 | Works fully within browser limits | File input keeps browser picker and adds camera capture hint.             |
+| Sample/demo source            | Works fully                       | `Load sample` e2e path passes.                                            |
+| Deep links                    | Works fully for settings          | Settings hash link e2e path passes; source images intentionally excluded. |
+| Imported state                | Works fully                       | Project JSON import/export e2e path passes.                               |
+| Restored autosave             | Works fully                       | Last project/settings restore through versioned IndexedDB state.          |
+
+After counts:
+
+- Green: 11
+- Yellow: 0
+- Red: 0
+- Out of scope: 1

@@ -58,3 +58,12 @@ Date: 2026-05-09
 - No backend, auth, cloud storage, or server-side proxy.
 - No folder import, print/PDF, embed code, or runtime API.
 - No Real-ESRGAN/libigl/scikit-image payloads in this phase.
+
+## Completion Summary
+
+- Implemented 33 selected catalog items.
+- Added `e2e/completeness.spec.ts` for input/output/persistence/share paths.
+- Kept Phase 2 real-data fixtures green.
+- Replaced delayed settings persistence with immediate validated persistence.
+- Added versioned project state import/export and settings-only share links.
+- Consolidated preview runner scripts and split sampler presentation components out of `App.tsx`.
