@@ -17,18 +17,25 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThreePreview } from "@/features/preview/ThreePreview";
+import {
+  AnalysisPanel,
+  BatchList,
+  Control,
+  DebugPanel,
+  MapTile,
+  type BatchItem
+} from "@/features/sampler/components";
 import { createProcessorClient, type ProcessorClient } from "@/features/sampler/processorClient";
 import {
   defaultSettings,
   type GeometryMode,
   type ProcessedTextureSet,
   type SettingKey,
-  type TextureMap,
   type TextureSettings,
   type UserFacingError
 } from "@/features/sampler/types";
 import { fallbackBuildInfo, fetchBuildInfo, PAYPAL_URL, REPO_URL } from "@/lib/build-info";
-import { downloadJson, downloadMap, downloadZip } from "@/lib/image/export";
+import { downloadJson, downloadZip } from "@/lib/image/export";
 import { validateImageFile } from "@/lib/input/fileValidation";
 import {
   createSampleTextureFile,
@@ -55,15 +62,6 @@ import {
   saveSettings
 } from "@/lib/storage/projects";
 import { userError } from "@/lib/substance/warnings";
-
-type BatchStatus = "queued" | "processing" | "ready" | "error";
-
-interface BatchItem {
-  id: string;
-  name: string;
-  status: BatchStatus;
-  detail: string;
-}
 
 interface LoadOptions {
   settings?: TextureSettings;
@@ -777,116 +775,5 @@ export function App() {
         <span>repo https://github.com/baditaflorin/substance-sampler</span>
       </footer>
     </div>
-  );
-}
-
-interface ControlProps {
-  label: string;
-  value: number;
-  min: number;
-  max: number;
-  step: number;
-  onChange: (value: number) => void;
-}
-
-function Control({ label, value, min, max, step, onChange }: ControlProps) {
-  return (
-    <label className="control-row">
-      <span>{label}</span>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
-      />
-      <output>{Number.isInteger(value) ? value : value.toFixed(2)}</output>
-    </label>
-  );
-}
-
-function BatchList({ items }: { items: BatchItem[] }) {
-  return (
-    <ul className="batch-list" aria-label="Batch input status">
-      {items.map((item) => (
-        <li key={item.id} data-batch-status={item.status}>
-          <strong>{item.name}</strong>
-          <span>{item.detail}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function AnalysisPanel({ result }: { result: ProcessedTextureSet }) {
-  return (
-    <section className="analysis-panel" aria-label="Texture analysis">
-      <div>
-        <span className="eyebrow">Detected</span>
-        <strong data-testid="material-kind">{result.analysis.material}</strong>
-        <span data-testid="material-confidence">{result.analysis.materialConfidenceLabel}</span>
-      </div>
-      <div>
-        <span className="eyebrow">Source</span>
-        <strong>{result.analysis.sourceConfidenceLabel}</strong>
-        <span>{Math.round(result.analysis.sourceConfidence * 100)}%</span>
-      </div>
-      <ul className="warning-list" aria-label="Analysis warnings">
-        {result.analysis.warnings.map((item) => (
-          <li key={item.id} data-warning-id={item.id} className={item.severity}>
-            <strong>{item.title}</strong>
-            <span>{item.what}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function MapTile({ map }: { map: TextureMap }) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) {
-      return;
-    }
-
-    canvas.width = map.imageData.width;
-    canvas.height = map.imageData.height;
-    ctx.putImageData(map.imageData, 0, 0);
-  }, [map]);
-
-  return (
-    <article className="map-tile">
-      <div className="map-meta">
-        <h3>{map.label}</h3>
-        <span className={`confidence ${map.confidenceLabel}`}>{map.confidenceLabel}</span>
-        <button
-          type="button"
-          onClick={() => void downloadMap(map)}
-          aria-label={`Download ${map.label}`}
-        >
-          <Download size={16} aria-hidden="true" />
-        </button>
-      </div>
-      <canvas ref={canvasRef} aria-label={`${map.label} texture map`} />
-    </article>
-  );
-}
-
-function DebugPanel({ result }: { result: ProcessedTextureSet }) {
-  return (
-    <section className="debug-panel" aria-label="Debug analysis">
-      <pre>
-        {JSON.stringify(
-          { report: result.report, analysis: result.analysis, metadata: result.metadata },
-          null,
-          2
-        )}
-      </pre>
-    </section>
   );
 }
