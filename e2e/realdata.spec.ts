@@ -47,11 +47,14 @@ for (const { expected, imagePath, imageFile } of expectations) {
 }
 
 async function upload(page: Page, imagePath: string) {
-  await page.locator('input[type="file"]').setInputFiles({
-    name: basename(imagePath),
-    mimeType: mimeFor(imagePath),
-    buffer: readFileSync(imagePath)
-  });
+  await page
+    .locator('input[type="file"]')
+    .first()
+    .setInputFiles({
+      name: basename(imagePath),
+      mimeType: mimeFor(imagePath),
+      buffer: readFileSync(imagePath)
+    });
 }
 
 function imageExtensionFor(expectationFile: string): string {

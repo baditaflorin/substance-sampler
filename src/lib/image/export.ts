@@ -37,7 +37,14 @@ export async function downloadZip(maps: TextureMap[], metadata?: ExportMetadata)
   downloadBlob(new Blob([zipBytes], { type: "application/zip" }), "substance-sampler-maps.zip");
 }
 
-function downloadBlob(blob: Blob, fileName: string): void {
+export function downloadJson(value: unknown, fileName: string): void {
+  downloadBlob(
+    new Blob([`${JSON.stringify(value, null, 2)}\n`], { type: "application/json" }),
+    fileName
+  );
+}
+
+export function downloadBlob(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;

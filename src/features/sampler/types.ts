@@ -4,6 +4,8 @@ export type MapKind = (typeof MAP_KINDS)[number];
 
 export type Accelerator = "webgpu" | "cpu";
 
+export type GeometryMode = "sphere" | "box" | "plane";
+
 export type MaterialKind =
   | "wood"
   | "brick"
