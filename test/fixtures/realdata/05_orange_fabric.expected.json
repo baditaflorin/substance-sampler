@@ -1,0 +1,10 @@
+{
+  "id": "05",
+  "label": "Orange fabric textile",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Orange_fabric_textile_cloth_texture.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "fabric",
+  "minMaterialConfidence": 0.45,
+  "requiredWarnings": ["fine-detail-risk", "non-square-output"],
+  "notes": "Fine weave should get material-specific defaults and a detail-preservation warning."
+}

@@ -1,0 +1,9 @@
+{
+  "id": "09",
+  "label": "Empty image upload",
+  "sourceUrl": "Local empty-file edge case",
+  "shouldLoad": false,
+  "expectedError": "empty-file",
+  "requiredWarnings": [],
+  "notes": "Empty files should fail before browser decode with an actionable message."
+}

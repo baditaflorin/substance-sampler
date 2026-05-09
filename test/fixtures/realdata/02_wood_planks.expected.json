@@ -1,0 +1,10 @@
+{
+  "id": "02",
+  "label": "Wood planks texture",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Wood_planks_texture.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "wood",
+  "minMaterialConfidence": 0.55,
+  "requiredWarnings": ["non-square-output"],
+  "notes": "Clean forgiving input; Phase 2 should infer wood and preserve direction/detail defaults."
+}

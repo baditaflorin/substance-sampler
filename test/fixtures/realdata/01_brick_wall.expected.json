@@ -1,0 +1,10 @@
+{
+  "id": "01",
+  "label": "Brick wall close-up photo",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Brick_wall_close-up_view.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "brick",
+  "minMaterialConfidence": 0.55,
+  "requiredWarnings": ["huge-source", "non-square-output"],
+  "notes": "Huge masonry input should not export silently; output shape and downsampling must be disclosed."
+}

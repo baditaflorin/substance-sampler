@@ -1,0 +1,10 @@
+{
+  "id": "08",
+  "label": "JPEG bytes mislabeled as PNG",
+  "sourceUrl": "Derived from https://commons.wikimedia.org/wiki/File:Wood_planks_texture.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "wood",
+  "minMaterialConfidence": 0.55,
+  "requiredWarnings": ["format-mismatch", "non-square-output"],
+  "notes": "Byte signature should win over extension/MIME and the correction should be visible."
+}

@@ -1,0 +1,10 @@
+{
+  "id": "07",
+  "label": "Grey speckled floor tile texture",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Grey_speckled_clean_cemented_tile_floor_paving_texture.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "tile",
+  "minMaterialConfidence": 0.5,
+  "requiredWarnings": ["grid-detected"],
+  "notes": "Tile/grid structure should be recognized and disclosed."
+}

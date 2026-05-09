@@ -1,0 +1,10 @@
+{
+  "id": "06",
+  "label": "Red rust texture",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:RED_RUST_TEXTURE.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "rust",
+  "minMaterialConfidence": 0.45,
+  "requiredWarnings": ["chroma-height-risk", "non-square-output"],
+  "notes": "Strong color variation should lower height confidence."
+}

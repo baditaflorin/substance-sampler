@@ -1,0 +1,9 @@
+{
+  "id": "10",
+  "label": "Truncated concrete JPEG partial transfer",
+  "sourceUrl": "First 8 KB of https://commons.wikimedia.org/wiki/File:Textured_Concrete_Wall.jpg",
+  "shouldLoad": false,
+  "expectedError": "truncated-jpeg",
+  "requiredWarnings": [],
+  "notes": "Partial JPEG transfer should be identified before generic decode failure."
+}

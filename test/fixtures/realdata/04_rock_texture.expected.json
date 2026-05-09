@@ -1,0 +1,10 @@
+{
+  "id": "04",
+  "label": "Rock/stone surface with large irregular forms",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:Rock_texture.jpg",
+  "shouldLoad": true,
+  "expectedMaterial": "rock",
+  "minMaterialConfidence": 0.45,
+  "requiredWarnings": ["scene-scale-risk", "non-square-output"],
+  "notes": "Large rock forms should be flagged as risky for flat seamless PBR material generation."
+}
