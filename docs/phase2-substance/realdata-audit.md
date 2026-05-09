@@ -1,12 +1,15 @@
 # Phase 2 Substance Real-Data Audit
 
-Date: 2026-05-08
+Date: 2026-05-09
 
 Live app tested:
 https://baditaflorin.github.io/substance-sampler/
 
 Version shown by app:
 v0.1.0, commit 770e5fd
+
+Phase 2 implementation result:
+v0.2.0 candidate, commit cc42e49 plus release documentation/build commits
 
 ## Summary
 
@@ -246,3 +249,35 @@ Guess whether the problem is file type, corruption, browser support, or app bug.
 - No visual polish pass, theme work, command palette, landing page, social cards, or marketing work.
 - No node-graph editor, procedural material system, asset library, or team/project sync.
 - No bundled large Real-ESRGAN or libigl native/WASM payload unless a later confirmed Phase 2 plan explicitly prioritizes it within the same static Mode A constraints.
+
+## Phase 2 Result Trend
+
+Fixture contract after implementation:
+10 of 10 fixtures pass `npm run test:realdata`.
+
+Primary flow after implementation:
+8 of 8 valid image fixtures generate maps with material classification, warnings, per-map confidence, and export metadata. 2 of 2 broken fixtures fail early with actionable domain errors.
+
+Pass-rate trend:
+
+| Check                                              | Before |   After |
+| -------------------------------------------------- | -----: | ------: |
+| Domain-useful valid-image first guesses            |  3 / 8 |   8 / 8 |
+| Broken/adversarial inputs with specific guidance   |  1 / 3 |   3 / 3 |
+| Fixtures with confidence or warning/error surfaced | 0 / 10 | 10 / 10 |
+| Automated real-data fixture contracts              | 0 / 10 | 10 / 10 |
+
+Implemented behavior by fixture:
+
+| ID  | After behavior                                                                 |
+| --- | ------------------------------------------------------------------------------ |
+| 01  | Detects brick, large-source downsample, and non-square output.                 |
+| 02  | Detects wood and non-square output.                                            |
+| 03  | Detects concrete, huge source, broad lighting gradient, and non-square output. |
+| 04  | Detects rock and scene-scale risk.                                             |
+| 05  | Detects fabric and fine-detail risk.                                           |
+| 06  | Detects rust and chroma-driven height risk.                                    |
+| 07  | Detects tile/grid structure.                                                   |
+| 08  | Detects wood and reports extension/MIME mismatch.                              |
+| 09  | Rejects empty upload before decode with `empty-file`.                          |
+| 10  | Rejects partial JPEG before decode with `truncated-jpeg`.                      |

@@ -1,6 +1,6 @@
 {
   "name": "substance-sampler",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Browser-based photo-to-PBR texture creation for indie game and 3D artists, powered by WebGPU and WASM.",
   "type": "module",
   "private": false,

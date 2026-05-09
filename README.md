@@ -19,7 +19,7 @@ https://www.paypal.com/paypalme/florinbadita
 
 ## What It Does
 
-Substance Sampler imports a photo and generates albedo, normal, roughness, height, and ambient occlusion texture maps fully in the browser. The page includes a live material preview, ZIP export, local settings persistence, a GitHub star link, a PayPal support link, and visible version/commit metadata.
+Substance Sampler imports a photo and generates albedo, normal, roughness, height, and ambient occlusion texture maps fully in the browser. The page includes material/source analysis, per-map confidence, real-data warnings, a live material preview, ZIP export with provenance metadata, local settings persistence, a GitHub star link, a PayPal support link, and visible version/commit metadata.
 
 ## Quickstart
 
@@ -38,6 +38,7 @@ make build
 make test
 make lint
 make smoke
+make test-realdata
 make pages-preview
 ```
 
@@ -73,6 +74,9 @@ https://github.com/baditaflorin/substance-sampler/tree/main/docs/adr
 
 Deployment notes:
 https://github.com/baditaflorin/substance-sampler/blob/main/docs/deploy.md
+
+Phase 2 substance audit and postmortem:
+https://github.com/baditaflorin/substance-sampler/blob/main/docs/postmortem-phase2-substance.md
 
 Privacy:
 https://github.com/baditaflorin/substance-sampler/blob/main/docs/privacy.md

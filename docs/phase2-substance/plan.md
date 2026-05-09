@@ -51,3 +51,11 @@ Ranked by impact on the real-data audit, not implementation novelty.
 - No new product surface such as a material library, node graph, or account system.
 - No visual polish pass beyond UI text needed for confidence, warnings, and debug.
 - No bundled large model payloads.
+
+## Completion Result
+
+Implemented in v0.2.0:
+
+- Items 2, 3, 4, 6, 8, 9, 12, 13, 14, 15, 16, 18, 19, 24, 25, 26, 27, 28, 29, 31, 32, 33, 35, 37, 38, and 39.
+- Fixture gate: `npm run test:realdata` passes 10 of 10 real-world fixtures.
+- Release gate: `make smoke` passes the desktop/mobile happy path plus the real-data fixture suite.
