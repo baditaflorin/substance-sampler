@@ -1,4 +1,4 @@
-const CACHE_NAME = "substance-sampler-v0.2.0";
+const CACHE_NAME = "substance-sampler-v0.3.0";
 const BASE = "/substance-sampler/";
 
 self.addEventListener("install", (event) => {

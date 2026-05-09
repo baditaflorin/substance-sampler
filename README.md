@@ -89,6 +89,9 @@ https://github.com/baditaflorin/substance-sampler/blob/main/docs/postmortem-phas
 Phase 3 completeness audit:
 https://github.com/baditaflorin/substance-sampler/tree/main/docs/phase3
 
+Phase 3 postmortem:
+https://github.com/baditaflorin/substance-sampler/blob/main/docs/postmortem-phase3.md
+
 Privacy:
 https://github.com/baditaflorin/substance-sampler/blob/main/docs/privacy.md
 
