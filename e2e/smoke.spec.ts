@@ -1,7 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
 
 const samplePng = makePng(64, 64);
+const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
+const expectedVersion = new RegExp(`v${escapeRegExp(packageJson.version)}`);
 
 const viewports = [
   { name: "desktop", width: 1440, height: 960 },
@@ -22,7 +25,7 @@ for (const viewport of viewports) {
       "href",
       "https://www.paypal.com/paypalme/florinbadita"
     );
-    await expect(page.getByText(/v0\.1\.0/)).toBeVisible();
+    await expect(page.getByText(expectedVersion)).toBeVisible();
     await expect(page.getByText(/commit /)).toBeVisible();
 
     await uploadSample(page);
@@ -47,6 +50,10 @@ for (const viewport of viewports) {
       )
       .toBeGreaterThan(1200);
   });
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 async function uploadSample(page: Page) {
