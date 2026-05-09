@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PREVIEW_SERVER_PID=""
+
 preview_repo_root() {
   cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd
 }
@@ -24,10 +26,12 @@ run_preview_tests() {
   local env_port="${!port_env_name:-}"
   local port="${env_port:-$(preview_free_port)}"
   npx vite preview --host 127.0.0.1 --port "$port" --strictPort >"$log_file" 2>&1 &
-  local server_pid="$!"
+  PREVIEW_SERVER_PID="$!"
 
   cleanup() {
-    kill "$server_pid" >/dev/null 2>&1 || true
+    if [[ -n "${PREVIEW_SERVER_PID:-}" ]]; then
+      kill "$PREVIEW_SERVER_PID" >/dev/null 2>&1 || true
+    fi
   }
   trap cleanup EXIT
 
