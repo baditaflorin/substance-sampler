@@ -1,4 +1,4 @@
-.PHONY: help install-hooks dev build data test test-integration smoke lint fmt pages-preview docker-build docker-push release compose-up compose-down clean hooks-pre-commit hooks-commit-msg hooks-pre-push
+.PHONY: help install-hooks dev build data test test-realdata test-integration smoke lint fmt pages-preview docker-build docker-push release compose-up compose-down clean hooks-pre-commit hooks-commit-msg hooks-pre-push
 
 help: ## List all targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -20,8 +20,11 @@ data: ## Mode A has no data pipeline
 test: ## Run unit tests
 	@npm test
 
+test-realdata: ## Run real-data fixture tests
+	@npm run test:realdata
+
 test-integration: ## Run integration tests
-	@echo "Mode A: no separate integration suite yet."
+	@npm run test:realdata
 
 smoke: ## Build, serve docs/, and run Playwright smoke tests
 	@npm run smoke

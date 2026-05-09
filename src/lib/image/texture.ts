@@ -1,4 +1,13 @@
-import type { ProcessedTextureSet, TextureMap, TextureSettings } from "@/features/sampler/types";
+import {
+  type FileValidationReport,
+  type ProcessedTextureSet,
+  type SourceContext,
+  type TextureMap,
+  type TextureSettings
+} from "@/features/sampler/types";
+import { fingerprintImageData } from "@/lib/hash/fingerprint";
+import { analyzeTextureSource } from "@/lib/substance/analysis";
+import { confidenceLabel } from "@/lib/substance/warnings";
 import { computeHeightWithWebGPU } from "@/lib/webgpu/heightCompute";
 import {
   boxBlurScalar,
@@ -16,53 +25,155 @@ interface PreparedSource {
   height: number;
 }
 
+function defaultSourceContext(source: ImageData): SourceContext {
+  const fingerprint = fingerprintImageData(source);
+  const validation: FileValidationReport = {
+    fileName: "source-image",
+    extension: "",
+    mimeType: "image/unknown",
+    detectedFormat: "unknown",
+    byteLength: source.data.byteLength,
+    sourceFingerprint: fingerprint,
+    warnings: []
+  };
+
+  return {
+    fileName: "source-image",
+    originalWidth: source.width,
+    originalHeight: source.height,
+    normalizedWidth: source.width,
+    normalizedHeight: source.height,
+    sourceFingerprint: fingerprint,
+    validation,
+    userOwnedSettings: []
+  };
+}
+
 export async function processTexture(
   source: ImageData,
-  settings: TextureSettings
+  settings: TextureSettings,
+  context = defaultSourceContext(source)
 ): Promise<ProcessedTextureSet> {
   const started = performance.now();
   const prepared = resizeImageData(source, settings.outputSize);
-  const tileable = makeTileable(prepared.imageData, settings.tileStrength);
+  const analysisStarted = performance.now();
+  const analysis = analyzeTextureSource(prepared.imageData, settings, context);
+  const settingsUsed = analysis.recommendedSettings;
+  const analysisMs = Math.round(performance.now() - analysisStarted);
+  const processingStarted = performance.now();
+  const tileable = makeTileable(prepared.imageData, settingsUsed.tileStrength);
   const albedo = adjustAlbedo(tileable);
-  const heightResult = await deriveHeight(tileable, settings);
+  const heightResult = await deriveHeight(tileable, settingsUsed);
   const height = scalarToImageData(heightResult.values, prepared.width, prepared.height);
   const normal = normalFromHeight(
     heightResult.values,
     prepared.width,
     prepared.height,
-    settings.normalStrength
+    settingsUsed.normalStrength
   );
   const roughness = roughnessFromHeight(
     heightResult.values,
     prepared.width,
     prepared.height,
-    settings.roughnessBias,
-    settings.detailStrength
+    settingsUsed.roughnessBias,
+    settingsUsed.detailStrength
   );
   const ao = ambientOcclusionFromHeight(heightResult.values, prepared.width, prepared.height);
   const maps = [
-    makeMap("albedo", "Albedo", "substance-sampler-albedo.png", albedo),
-    makeMap("normal", "Normal", "substance-sampler-normal.png", normal),
-    makeMap("roughness", "Roughness", "substance-sampler-roughness.png", roughness),
-    makeMap("height", "Height", "substance-sampler-height.png", height),
-    makeMap("ao", "Ambient Occlusion", "substance-sampler-ao.png", ao)
+    makeMap(
+      "albedo",
+      "Albedo",
+      "substance-sampler-albedo.png",
+      albedo,
+      analysis.mapConfidence.albedo
+    ),
+    makeMap(
+      "normal",
+      "Normal",
+      "substance-sampler-normal.png",
+      normal,
+      analysis.mapConfidence.normal
+    ),
+    makeMap(
+      "roughness",
+      "Roughness",
+      "substance-sampler-roughness.png",
+      roughness,
+      analysis.mapConfidence.roughness
+    ),
+    makeMap(
+      "height",
+      "Height",
+      "substance-sampler-height.png",
+      height,
+      analysis.mapConfidence.height
+    ),
+    makeMap("ao", "Ambient Occlusion", "substance-sampler-ao.png", ao, analysis.mapConfidence.ao)
   ];
   const finalMaps =
-    settings.upscale === 2
-      ? maps.map((map) => ({ ...map, imageData: upscale(map.imageData) }))
+    settingsUsed.upscale === 2
+      ? maps.map((map) => {
+          const imageData = upscale(map.imageData);
+          return { ...map, imageData, fingerprint: fingerprintImageData(imageData) };
+        })
       : maps;
   const first = finalMaps[0]?.imageData ?? prepared.imageData;
+  const processingMs = Math.round(performance.now() - processingStarted);
+  const metadata = {
+    schemaVersion: "substance-sampler-export-v2" as const,
+    appVersion: __APP_VERSION__,
+    commit: __GIT_COMMIT__,
+    source: {
+      fileName: context.fileName,
+      fingerprint: context.sourceFingerprint,
+      originalWidth: context.originalWidth,
+      originalHeight: context.originalHeight,
+      normalizedWidth: context.normalizedWidth,
+      normalizedHeight: context.normalizedHeight,
+      byteLength: context.validation.byteLength,
+      detectedFormat: context.validation.detectedFormat,
+      mimeType: context.validation.mimeType
+    },
+    settings: settingsUsed,
+    analysis: {
+      schemaVersion: analysis.schemaVersion,
+      material: analysis.material,
+      materialConfidence: analysis.materialConfidence,
+      materialConfidenceLabel: analysis.materialConfidenceLabel,
+      sourceConfidence: analysis.sourceConfidence,
+      sourceConfidenceLabel: analysis.sourceConfidenceLabel,
+      reasoning: analysis.reasoning,
+      warnings: analysis.warnings,
+      metrics: analysis.metrics,
+      mapConfidence: analysis.mapConfidence
+    },
+    maps: finalMaps.map((map) => ({
+      kind: map.kind,
+      fileName: map.fileName,
+      fingerprint: map.fingerprint,
+      confidence: map.confidence
+    })),
+    generatedAt: new Date().toISOString()
+  };
 
   return {
     maps: finalMaps,
     report: {
       sourceWidth: source.width,
       sourceHeight: source.height,
+      originalWidth: context.originalWidth,
+      originalHeight: context.originalHeight,
       outputWidth: first.width,
       outputHeight: first.height,
       elapsedMs: Math.round(performance.now() - started),
-      accelerator: heightResult.accelerator
-    }
+      accelerator: heightResult.accelerator,
+      analysisMs,
+      processingMs,
+      state: "ready"
+    },
+    settingsUsed,
+    analysis,
+    metadata
   };
 }
 
@@ -70,9 +181,18 @@ function makeMap(
   kind: TextureMap["kind"],
   label: string,
   fileName: string,
-  imageData: ImageData
+  imageData: ImageData,
+  confidence: number
 ): TextureMap {
-  return { kind, label, fileName, imageData };
+  return {
+    kind,
+    label,
+    fileName,
+    imageData,
+    fingerprint: fingerprintImageData(imageData),
+    confidence,
+    confidenceLabel: confidenceLabel(confidence)
+  };
 }
 
 export function resizeImageData(source: ImageData, maxSize: number): PreparedSource {

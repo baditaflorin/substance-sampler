@@ -6,3 +6,4 @@ BUILD_INFO_PRESERVE=1 make build
 test -s docs/index.html
 grep -q "<div id=\"root\"></div>" docs/index.html
 BUILD_INFO_PRESERVE=1 make smoke
+BUILD_INFO_PRESERVE=1 make test-realdata

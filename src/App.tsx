@@ -12,30 +12,44 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ThreePreview } from "@/features/preview/ThreePreview";
-import { createProcessorClient } from "@/features/sampler/processorClient";
+import { createProcessorClient, type ProcessorClient } from "@/features/sampler/processorClient";
 import {
   defaultSettings,
+  type FileValidationReport,
   type ProcessedTextureSet,
+  type SettingKey,
+  type SourceContext,
   type TextureMap,
-  type TextureSettings
+  type TextureSettings,
+  type UserFacingError
 } from "@/features/sampler/types";
 import { fallbackBuildInfo, fetchBuildInfo, PAYPAL_URL, REPO_URL } from "@/lib/build-info";
 import { downloadMap, downloadZip } from "@/lib/image/export";
+import { validateImageFile } from "@/lib/input/fileValidation";
 import { loadSettings, saveSettings } from "@/lib/storage/projects";
+import { userError } from "@/lib/substance/warnings";
 
 type GeometryMode = "sphere" | "box" | "plane";
 
+interface LoadedSource {
+  imageData: ImageData;
+  context: SourceContext;
+}
+
 export function App() {
-  const processor = useMemo(() => createProcessorClient(), []);
+  const activeClientRef = useRef<ProcessorClient | null>(null);
+  const activeJobRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [settings, setSettings] = useState<TextureSettings>(defaultSettings);
-  const [source, setSource] = useState<ImageData | null>(null);
+  const [userOwnedSettings, setUserOwnedSettings] = useState<SettingKey[]>([]);
+  const [source, setSource] = useState<LoadedSource | null>(null);
   const [sourceName, setSourceName] = useState("No photo loaded");
   const [result, setResult] = useState<ProcessedTextureSet | null>(null);
   const [status, setStatus] = useState("Ready");
   const [isProcessing, setIsProcessing] = useState(false);
   const [geometry, setGeometry] = useState<GeometryMode>("sphere");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<UserFacingError | null>(null);
+  const debug = useMemo(() => new URLSearchParams(window.location.search).get("debug") === "1", []);
   const buildInfoQuery = useQuery({
     queryKey: ["build-info"],
     queryFn: fetchBuildInfo,
@@ -53,55 +67,108 @@ export function App() {
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => () => processor.terminate(), [processor]);
+  useEffect(
+    () => () => {
+      activeClientRef.current?.terminate();
+    },
+    []
+  );
 
   const process = useCallback(
-    async (input: ImageData, nextSettings = settings) => {
+    async (input: LoadedSource, nextSettings = settings) => {
+      const jobId = activeJobRef.current + 1;
+      activeJobRef.current = jobId;
       setIsProcessing(true);
       setError(null);
       setStatus("Processing maps");
+      activeClientRef.current?.terminate();
+      const client = createProcessorClient();
+      activeClientRef.current = client;
 
       try {
         await saveSettings(nextSettings);
-        const processed = await processor.api.process(input, nextSettings);
+        const processed = await client.api.process(input.imageData, nextSettings, {
+          ...input.context,
+          userOwnedSettings
+        });
+
+        if (jobId !== activeJobRef.current) {
+          return;
+        }
+
         setResult(processed);
+        setSettings(processed.settingsUsed);
         setStatus(
-          `Maps ready: ${processed.report.outputWidth} x ${processed.report.outputHeight}, ${processed.report.accelerator.toUpperCase()}, ${processed.report.elapsedMs} ms`
+          `Maps ready: ${processed.report.outputWidth} x ${processed.report.outputHeight}, ${processed.analysis.material} ${processed.analysis.materialConfidenceLabel}, ${processed.report.accelerator.toUpperCase()}, ${processed.report.elapsedMs} ms`
         );
       } catch (caught) {
-        const message = caught instanceof Error ? caught.message : "Texture processing failed.";
-        setError(message);
+        if (jobId !== activeJobRef.current) {
+          return;
+        }
+
+        setError(
+          userError(
+            "processing-failed",
+            "Processing failed",
+            "The source loaded, but map generation did not complete.",
+            caught instanceof Error
+              ? caught.message
+              : "The browser did not provide a specific error.",
+            "Try a smaller crop or lower output size, then regenerate."
+          )
+        );
         setStatus("Processing failed");
       } finally {
-        setIsProcessing(false);
+        if (jobId === activeJobRef.current) {
+          setIsProcessing(false);
+          activeClientRef.current = null;
+        }
+        client.terminate();
       }
     },
-    [processor.api, settings]
+    [settings, userOwnedSettings]
   );
 
   const loadFile = useCallback(
     async (file: File) => {
-      setStatus("Loading photo");
+      setStatus("Validating source");
       setError(null);
 
       try {
-        const imageData = await fileToImageData(file);
-        setSource(imageData);
+        const validation = await validateImageFile(file);
+        if (validation.error || !validation.report) {
+          setError(validation.error);
+          setStatus("Load failed");
+          return;
+        }
+
+        setStatus("Loading photo");
+        const loaded = await fileToLoadedSource(file, validation.report, userOwnedSettings);
+        setSource(loaded);
         setSourceName(file.name);
-        await process(imageData);
+        await process(loaded);
       } catch (caught) {
-        const message =
-          caught instanceof Error ? caught.message : "Could not load the selected photo.";
-        setError(message);
+        setError(
+          userError(
+            "decode-failed",
+            "Image decode failed",
+            "The browser could not decode this source image.",
+            caught instanceof Error
+              ? caught.message
+              : "The decoder did not provide a detailed reason.",
+            "Try re-exporting the source as PNG, JPEG, or WebP."
+          )
+        );
         setStatus("Load failed");
       }
     },
-    [process]
+    [process, userOwnedSettings]
   );
 
   const updateSetting = useCallback(
     <K extends keyof TextureSettings>(key: K, value: TextureSettings[K]) => {
       setSettings((current) => ({ ...current, [key]: value }));
+      setUserOwnedSettings((current) => (current.includes(key) ? current : [...current, key]));
     },
     []
   );
@@ -111,6 +178,14 @@ export function App() {
       void process(source, settings);
     }
   }, [process, settings, source]);
+
+  const cancelProcessing = useCallback(() => {
+    activeJobRef.current += 1;
+    activeClientRef.current?.terminate();
+    activeClientRef.current = null;
+    setIsProcessing(false);
+    setStatus(result ? "Cancelled. Previous maps kept." : "Cancelled");
+  }, [result]);
 
   const onDrop = useCallback(
     (event: React.DragEvent<HTMLLabelElement>) => {
@@ -255,6 +330,11 @@ export function App() {
               <RefreshCw size={18} aria-hidden="true" />
               Regenerate
             </button>
+            {isProcessing ? (
+              <button className="secondary-action" type="button" onClick={cancelProcessing}>
+                Cancel
+              </button>
+            ) : null}
           </section>
 
           <section className="tool-section">
@@ -278,7 +358,7 @@ export function App() {
               className="secondary-action"
               type="button"
               disabled={!canExport}
-              onClick={() => result && void downloadZip(result.maps)}
+              onClick={() => result && void downloadZip(result.maps, result.metadata)}
             >
               <Download size={18} aria-hidden="true" />
               Download ZIP
@@ -290,17 +370,23 @@ export function App() {
           <div className="status-strip" role="status" aria-live="polite">
             <span className={isProcessing ? "pulse-dot busy" : "pulse-dot"} />
             <span>{status}</span>
-            {error ? <strong>{error}</strong> : null}
+            {error ? (
+              <strong data-testid="error-code" data-error-code={error.code}>
+                {error.title}: {error.what} {error.nextStep}
+              </strong>
+            ) : null}
           </div>
 
           {result ? (
             <>
+              <AnalysisPanel result={result} />
               <ThreePreview maps={result.maps} geometry={geometry} />
               <section className="map-grid" aria-label="Texture map outputs">
                 {result.maps.map((map) => (
                   <MapTile key={map.kind} map={map} />
                 ))}
               </section>
+              {debug ? <DebugPanel result={result} /> : null}
             </>
           ) : (
             <section className="empty-state" aria-label="Waiting for image">
@@ -347,6 +433,31 @@ function Control({ label, value, min, max, step, onChange }: ControlProps) {
   );
 }
 
+function AnalysisPanel({ result }: { result: ProcessedTextureSet }) {
+  return (
+    <section className="analysis-panel" aria-label="Texture analysis">
+      <div>
+        <span className="eyebrow">Detected</span>
+        <strong data-testid="material-kind">{result.analysis.material}</strong>
+        <span data-testid="material-confidence">{result.analysis.materialConfidenceLabel}</span>
+      </div>
+      <div>
+        <span className="eyebrow">Source</span>
+        <strong>{result.analysis.sourceConfidenceLabel}</strong>
+        <span>{Math.round(result.analysis.sourceConfidence * 100)}%</span>
+      </div>
+      <ul className="warning-list" aria-label="Analysis warnings">
+        {result.analysis.warnings.map((item) => (
+          <li key={item.id} data-warning-id={item.id} className={item.severity}>
+            <strong>{item.title}</strong>
+            <span>{item.what}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function MapTile({ map }: { map: TextureMap }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -366,6 +477,7 @@ function MapTile({ map }: { map: TextureMap }) {
     <article className="map-tile">
       <div className="map-meta">
         <h3>{map.label}</h3>
+        <span className={`confidence ${map.confidenceLabel}`}>{map.confidenceLabel}</span>
         <button
           type="button"
           onClick={() => void downloadMap(map)}
@@ -379,7 +491,25 @@ function MapTile({ map }: { map: TextureMap }) {
   );
 }
 
-async function fileToImageData(file: File): Promise<ImageData> {
+function DebugPanel({ result }: { result: ProcessedTextureSet }) {
+  return (
+    <section className="debug-panel" aria-label="Debug analysis">
+      <pre>
+        {JSON.stringify(
+          { report: result.report, analysis: result.analysis, metadata: result.metadata },
+          null,
+          2
+        )}
+      </pre>
+    </section>
+  );
+}
+
+async function fileToLoadedSource(
+  file: File,
+  validation: FileValidationReport,
+  userOwnedSettings: SettingKey[]
+): Promise<LoadedSource> {
   const bitmap = await createImageBitmap(file);
   const maxSide = 2048;
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
@@ -395,6 +525,20 @@ async function fileToImageData(file: File): Promise<ImageData> {
   }
 
   ctx.drawImage(bitmap, 0, 0, width, height);
+  const context: SourceContext = {
+    fileName: file.name,
+    originalWidth: bitmap.width,
+    originalHeight: bitmap.height,
+    normalizedWidth: width,
+    normalizedHeight: height,
+    sourceFingerprint: validation.sourceFingerprint,
+    validation,
+    userOwnedSettings
+  };
   bitmap.close();
-  return ctx.getImageData(0, 0, width, height);
+
+  return {
+    imageData: ctx.getImageData(0, 0, width, height),
+    context
+  };
 }

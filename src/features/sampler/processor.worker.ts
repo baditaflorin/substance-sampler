@@ -1,10 +1,10 @@
 import { expose } from "comlink";
-import type { TextureSettings } from "./types";
+import type { SourceContext, TextureSettings } from "./types";
 import { processTexture } from "@/lib/image/texture";
 
 const api = {
-  process(imageData: ImageData, settings: TextureSettings) {
-    return processTexture(imageData, settings);
+  process(imageData: ImageData, settings: TextureSettings, context: SourceContext) {
+    return processTexture(imageData, settings, context);
   }
 };
 

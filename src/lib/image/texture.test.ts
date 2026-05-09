@@ -69,4 +69,25 @@ describe("texture generation", () => {
     expect(result.report.accelerator).toBe("cpu");
     expect(result.report.outputWidth).toBe(8);
   });
+
+  it("keeps map outputs deterministic for identical input and settings", async () => {
+    const input = sampleImage(16, 16);
+    const settings = {
+      ...defaultSettings,
+      preferWebGpu: false,
+      outputSize: 16
+    };
+
+    const first = await processTexture(input, settings);
+    const second = await processTexture(input, settings);
+
+    expect(first.maps.map((map) => [map.kind, map.fingerprint])).toEqual(
+      second.maps.map((map) => [map.kind, map.fingerprint])
+    );
+    expect(first.metadata.maps).toEqual(second.metadata.maps);
+    expect(first.analysis.material).toEqual(second.analysis.material);
+    expect(first.analysis.warnings.map((item) => item.id)).toEqual(
+      second.analysis.warnings.map((item) => item.id)
+    );
+  });
 });

@@ -11,6 +11,7 @@
     "build": "tsc -b && vite build && node scripts/build-info.mjs docs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:realdata": "bash scripts/realdata.sh",
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check . && tsc -b --pretty false",
     "fmt": "prettier --write .",

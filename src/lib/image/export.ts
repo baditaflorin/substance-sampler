@@ -1,5 +1,5 @@
 import { zipSync } from "fflate";
-import type { TextureMap } from "@/features/sampler/types";
+import type { ExportMetadata, TextureMap } from "@/features/sampler/types";
 
 export async function imageDataToPngBlob(imageData: ImageData): Promise<Blob> {
   const canvas = new OffscreenCanvas(imageData.width, imageData.height);
@@ -17,7 +17,7 @@ export async function downloadMap(map: TextureMap): Promise<void> {
   downloadBlob(blob, map.fileName);
 }
 
-export async function downloadZip(maps: TextureMap[]): Promise<void> {
+export async function downloadZip(maps: TextureMap[], metadata?: ExportMetadata): Promise<void> {
   const files: Record<string, Uint8Array> = {};
 
   for (const map of maps) {
@@ -25,7 +25,13 @@ export async function downloadZip(maps: TextureMap[]): Promise<void> {
     files[map.fileName] = new Uint8Array(await blob.arrayBuffer());
   }
 
-  const zip = zipSync(files, { level: 6 });
+  if (metadata) {
+    files["substance-sampler-metadata.json"] = new TextEncoder().encode(
+      `${JSON.stringify(metadata, null, 2)}\n`
+    );
+  }
+
+  const zip = zipSync(files, { level: 6, mtime: new Date("1980-01-01T00:00:00.000Z") });
   const zipBytes = new Uint8Array(zip.byteLength);
   zipBytes.set(zip);
   downloadBlob(new Blob([zipBytes], { type: "application/zip" }), "substance-sampler-maps.zip");
