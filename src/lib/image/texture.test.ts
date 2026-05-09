@@ -85,6 +85,7 @@ describe("texture generation", () => {
       second.maps.map((map) => [map.kind, map.fingerprint])
     );
     expect(first.metadata.maps).toEqual(second.metadata.maps);
+    expect(first.metadata.generationFingerprint).toEqual(second.metadata.generationFingerprint);
     expect(first.analysis.material).toEqual(second.analysis.material);
     expect(first.analysis.warnings.map((item) => item.id)).toEqual(
       second.analysis.warnings.map((item) => item.id)

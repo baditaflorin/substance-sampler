@@ -155,6 +155,7 @@ export interface ExportMetadata {
     fingerprint: string;
     confidence: number;
   }>;
+  generationFingerprint: string;
   generatedAt: string;
 }
 

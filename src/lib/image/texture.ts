@@ -5,7 +5,7 @@ import {
   type TextureMap,
   type TextureSettings
 } from "@/features/sampler/types";
-import { fingerprintImageData } from "@/lib/hash/fingerprint";
+import { fingerprintBytes, fingerprintImageData } from "@/lib/hash/fingerprint";
 import { analyzeTextureSource } from "@/lib/substance/analysis";
 import { confidenceLabel } from "@/lib/substance/warnings";
 import { computeHeightWithWebGPU } from "@/lib/webgpu/heightCompute";
@@ -119,7 +119,7 @@ export async function processTexture(
       : maps;
   const first = finalMaps[0]?.imageData ?? prepared.imageData;
   const processingMs = Math.round(performance.now() - processingStarted);
-  const metadata = {
+  const metadataBase = {
     schemaVersion: "substance-sampler-export-v2" as const,
     appVersion: __APP_VERSION__,
     commit: __GIT_COMMIT__,
@@ -152,7 +152,11 @@ export async function processTexture(
       fileName: map.fileName,
       fingerprint: map.fingerprint,
       confidence: map.confidence
-    })),
+    }))
+  };
+  const metadata = {
+    ...metadataBase,
+    generationFingerprint: fingerprintBytes(new TextEncoder().encode(JSON.stringify(metadataBase))),
     generatedAt: new Date().toISOString()
   };
 
