@@ -608,6 +608,14 @@ export function App() {
               step={0.05}
               onChange={(value) => updateSetting("detailStrength", value)}
             />
+            <Control
+              label="Metallic"
+              value={settings.metallicBias}
+              min={0}
+              max={1}
+              step={0.05}
+              onChange={(value) => updateSetting("metallicBias", value)}
+            />
             <label className="toggle-row">
               <input
                 type="checkbox"

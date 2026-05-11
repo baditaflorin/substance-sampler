@@ -62,6 +62,10 @@ export function ThreePreview({ maps, geometry }: ThreePreviewProps) {
         THREE,
         maps.find((map) => map.kind === "ao")
       );
+      const metallic = textureFor(
+        THREE,
+        maps.find((map) => map.kind === "metallic")
+      );
 
       if (albedo) {
         albedo.colorSpace = THREE.SRGBColorSpace;
@@ -71,9 +75,10 @@ export function ThreePreview({ maps, geometry }: ThreePreviewProps) {
         map: albedo,
         normalMap: normal,
         roughnessMap: roughness,
+        metalnessMap: metallic,
         aoMap: ao,
         roughness: 0.72,
-        metalness: 0
+        metalness: metallic ? 1 : 0
       });
 
       const mesh = new THREE.Mesh(makeGeometry(THREE, geometry), material);
@@ -108,7 +113,7 @@ export function ThreePreview({ maps, geometry }: ThreePreviewProps) {
         renderer.dispose();
         mesh.geometry.dispose();
         material.dispose();
-        for (const map of [albedo, normal, roughness, ao]) {
+        for (const map of [albedo, normal, roughness, metallic, ao]) {
           map?.dispose();
         }
         renderer.domElement.remove();

@@ -16,6 +16,7 @@ export const TextureSettingsSchema = z.object({
   heightContrast: z.number().min(0.5).max(2.5),
   roughnessBias: z.number().min(0.15).max(0.95),
   detailStrength: z.number().min(0).max(1.2),
+  metallicBias: z.number().min(0).max(1).default(0),
   upscale: z.union([z.literal(1), z.literal(2)]),
   preferWebGpu: z.boolean()
 });
@@ -33,6 +34,7 @@ const SettingKeySchema = z.enum([
   "heightContrast",
   "roughnessBias",
   "detailStrength",
+  "metallicBias",
   "upscale",
   "preferWebGpu"
 ]);

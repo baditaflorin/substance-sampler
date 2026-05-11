@@ -79,6 +79,7 @@ export async function processTexture(
     settingsUsed.detailStrength
   );
   const ao = ambientOcclusionFromHeight(heightResult.values, prepared.width, prepared.height);
+  const metallic = metallicFromAnalysis(tileable, analysis.material, settingsUsed.metallicBias);
   const maps = [
     makeMap(
       "albedo",
@@ -100,6 +101,13 @@ export async function processTexture(
       "substance-sampler-roughness.png",
       roughness,
       analysis.mapConfidence.roughness
+    ),
+    makeMap(
+      "metallic",
+      "Metallic",
+      "substance-sampler-metallic.png",
+      metallic,
+      analysis.mapConfidence.metallic
     ),
     makeMap(
       "height",
@@ -341,6 +349,53 @@ export function normalFromHeight(
       output.data[index + 2] = clampByte((dz / length) * 127.5 + 127.5);
       output.data[index + 3] = 255;
     }
+  }
+
+  return output;
+}
+
+export function metallicFromAnalysis(
+  source: ImageData,
+  material: import("@/features/sampler/types").MaterialKind,
+  metallicBias: number
+): ImageData {
+  const output = new ImageData(source.width, source.height);
+  const dielectric =
+    material === "wood" ||
+    material === "fabric" ||
+    material === "brick" ||
+    material === "concrete" ||
+    material === "rock" ||
+    material === "tile";
+  const safeBias = clamp(metallicBias, 0, 1);
+
+  // PBR convention: dielectrics get zero metallic. We honor that even if the
+  // user nudges metallicBias up — metals are conductors, not a colour effect.
+  if (dielectric || safeBias <= 0.0001) {
+    for (let i = 0; i < output.data.length; i += 4) {
+      output.data[i] = 0;
+      output.data[i + 1] = 0;
+      output.data[i + 2] = 0;
+      output.data[i + 3] = 255;
+    }
+    return output;
+  }
+
+  for (let i = 0; i < source.data.length; i += 4) {
+    const r = source.data[i] ?? 0;
+    const g = source.data[i + 1] ?? 0;
+    const b = source.data[i + 2] ?? 0;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    const luma = luminance(r, g, b);
+    const desat = 1 - saturation * 0.7;
+    const bright = clamp(luma / 220, 0.15, 1.1);
+    const value = clampByte(safeBias * desat * bright * 255);
+    output.data[i] = value;
+    output.data[i + 1] = value;
+    output.data[i + 2] = value;
+    output.data[i + 3] = 255;
   }
 
   return output;

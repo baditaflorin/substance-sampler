@@ -1,4 +1,4 @@
-export const MAP_KINDS = ["albedo", "normal", "roughness", "height", "ao"] as const;
+export const MAP_KINDS = ["albedo", "normal", "roughness", "metallic", "height", "ao"] as const;
 
 export type MapKind = (typeof MAP_KINDS)[number];
 
@@ -11,6 +11,7 @@ export type MaterialKind =
   | "brick"
   | "concrete"
   | "fabric"
+  | "metal"
   | "rust"
   | "tile"
   | "rock"
@@ -59,6 +60,7 @@ export interface TextureSettings {
   heightContrast: number;
   roughnessBias: number;
   detailStrength: number;
+  metallicBias: number;
   upscale: 1 | 2;
   preferWebGpu: boolean;
 }
@@ -168,6 +170,7 @@ export const defaultSettings: TextureSettings = {
   heightContrast: 1.25,
   roughnessBias: 0.48,
   detailStrength: 0.4,
+  metallicBias: 0,
   upscale: 1,
   preferWebGpu: true
 };

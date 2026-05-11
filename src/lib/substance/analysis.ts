@@ -35,7 +35,7 @@ export function analyzeTextureSource(
     0.05,
     0.98
   );
-  const mapConfidence = mapConfidenceFor(warnings, sourceConfidence);
+  const mapConfidence = mapConfidenceFor(warnings, sourceConfidence, classification.material);
 
   return {
     schemaVersion: "phase2-analysis-v1",
@@ -140,11 +140,30 @@ function classifyMaterial(
 } {
   const name = fileName.toLowerCase();
   const keywordMap: Array<[MaterialKind, string[]]> = [
+    [
+      "metal",
+      [
+        "metal",
+        "steel",
+        "iron",
+        "aluminum",
+        "aluminium",
+        "copper",
+        "brass",
+        "bronze",
+        "gold",
+        "silver",
+        "chrome",
+        "titanium",
+        "platinum",
+        "tin"
+      ]
+    ],
     ["brick", ["brick", "masonry"]],
     ["wood", ["wood", "plank", "timber"]],
     ["concrete", ["concrete", "cement"]],
     ["fabric", ["fabric", "textile", "cloth", "weave"]],
-    ["rust", ["rust", "corrosion"]],
+    ["rust", ["rust", "corrosion", "oxide"]],
     ["tile", ["tile", "floor", "paving"]],
     ["rock", ["rock", "stone"]]
   ];
@@ -152,9 +171,11 @@ function classifyMaterial(
   for (const [material, keywords] of keywordMap) {
     const hit = keywords.find((keyword) => name.includes(keyword));
     if (hit) {
+      const baseConfidence =
+        material === "concrete" || material === "rock" ? 0.68 : material === "metal" ? 0.78 : 0.76;
       return {
         material,
-        confidence: material === "concrete" || material === "rock" ? 0.68 : 0.76,
+        confidence: baseConfidence,
         reasoning: [`File name contains "${hit}".`, reasonFromMetrics(material, metrics)]
       };
     }
@@ -344,19 +365,22 @@ function recommendSettings(
   set("heightContrast", metrics.lightingGradient > 38 ? 0.9 : material === "fabric" ? 1.45 : 1.2);
   set("detailStrength", material === "fabric" ? 0.85 : material === "rust" ? 0.35 : 0.5);
   set("normalStrength", material === "fabric" ? 10 : material === "rock" ? 4.5 : 7);
+  set("metallicBias", material === "metal" ? 0.85 : material === "rust" ? 0.4 : 0);
 
   return recommended;
 }
 
 function mapConfidenceFor(
   warnings: SubstanceWarning[],
-  sourceConfidence: number
+  sourceConfidence: number,
+  material: MaterialKind
 ): Record<MapKind, number> {
   const confidence: Record<MapKind, number> = {
     albedo: sourceConfidence,
     height: sourceConfidence - 0.04,
     normal: sourceConfidence - 0.04,
     roughness: sourceConfidence - 0.03,
+    metallic: metallicBaseConfidence(material, sourceConfidence),
     ao: sourceConfidence - 0.08
   };
 
@@ -382,8 +406,27 @@ function mapConfidenceFor(
     height: round(clamp(confidence.height, 0.05, 0.98)),
     normal: round(clamp(confidence.normal, 0.05, 0.98)),
     roughness: round(clamp(confidence.roughness, 0.05, 0.98)),
+    metallic: round(clamp(confidence.metallic, 0.05, 0.98)),
     ao: round(clamp(confidence.ao, 0.05, 0.98))
   };
+}
+
+function metallicBaseConfidence(material: MaterialKind, sourceConfidence: number): number {
+  if (material === "metal") return Math.min(0.9, sourceConfidence - 0.02);
+  if (material === "rust") return Math.min(0.7, sourceConfidence - 0.1);
+  if (
+    material === "wood" ||
+    material === "fabric" ||
+    material === "brick" ||
+    material === "concrete" ||
+    material === "rock" ||
+    material === "tile"
+  ) {
+    // Dielectric defaults to zero metallic — high confidence because the answer is "definitely zero".
+    return Math.min(0.92, sourceConfidence);
+  }
+  // Unknown: metallic guess is weak.
+  return Math.max(0.15, sourceConfidence - 0.4);
 }
 
 function computeSeamMismatch(source: ImageData): number {
